@@ -1,0 +1,391 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+	<title>Java Module mit Jigsaw</title>
+
+	<link rel="stylesheet" href="css/reveal.css">
+	<link rel="stylesheet" href="css/theme/daniel.css">
+
+	<!-- Theme used for syntax highlighting of code -->
+	<link rel="stylesheet" href="lib/css/zenburn.css">
+
+	<!-- Printing and PDF exports -->
+	<script>
+	var link = document.createElement( 'link' );
+	link.rel = 'stylesheet';
+	link.type = 'text/css';
+	link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+	document.getElementsByTagName( 'head' )[0].appendChild( link );
+	</script>
+</head>
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section data-background-image="img/puzzle.jpg"><h1>Java Module mit Jigsaw</h1></section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
+			<section data-background-image="img/puzzle.jpg">
+				<section>
+					<h2>Wozu brauchen wir Java Jigsaw?</h2>
+				</section>
+				<section data-background-image="img/hell.jpg">
+					<h2>JAR Hell!</h2>
+					<aside class="notes">
+						<ul>
+							<li>Ant mit lib Verzeichnis, konkurrierende Versionen</li>
+							<li>Besserung durch Maven, aber immer noch problematisch, wenn gleiche Klassen in verschiedenen Artefakten versteckt sind</li>
+						  <li>Was sind JARs? Keine Komponenten! Flat im Classloader!</li>
+						</ul>
+					</aside>
+				</section>
+				<section data-background-image="img/babel.jpg">
+					<h2>Java ist ein Monolith!</h2>
+					<aside class="notes">
+						<ul>
+							<li>Java ist mittlerweile mehr als 10 Jahre alt und ist stetig gewachsen</li>
+							<li>nicht mehr zeitgemäß für Cloud und IoT, da zuviel Speicherverbrauch</li>
+						</ul>
+					</aside>
+				</section>
+				<section data-background-image="img/babel.jpg">
+					<h2>Java Anwendungen sind monolithisch!</h2>
+					<p class="fragment">High cohesion, low coupling</p>
+					<img src="img/coupling.jpg" class="fragment">
+					<aside class="notes">
+						<ul>
+							<li>auch hier hat Maven Linderung verschafft</li>
+							</li>OSGi zwar geeignet, aber fristet Nischendasein</li>
+						</ul>
+					</aside>
+				</section>
+			</section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
+			<section data-background-image="img/anatomie.jpg">
+				<section>
+					<h2>Module definieren</h2>
+				</section>
+				<section>
+					<blockquote cite="http://openjdk.java.net/projects/jigsaw/spec/sotms/#defining-modules">"A module is a <span class="fragment highlight-blue">named</span>, self-describing collection of <span class="fragment highlight-blue">code</span> and <span class="fragment highlight-blue">data"</span>.
+						<small>Its code is organized as a set of packages containing types, i.e., Java classes and interfaces; its data includes resources and other kinds of static information.</small></blockquote>
+					<p>-- Mark Reinhold</p>
+				</section>
+				<section>
+					<h3>Das dümmste anzunehmende Modul</h3>
+					<pre><code data-trim>
+module com.foo.bar { }
+					</code></pre>
+				</section>
+				<section>
+					<h3>Abhängigkeiten definieren</h3>
+					<pre><code data-trim>
+module com.foo.bar {
+  requires org.baz.qux;
+}
+					</code></pre>
+				</section>
+				<section>
+					<h3>Exports definieren</h3>
+					<pre><code data-trim>
+module com.foo.bar {
+  requires org.baz.qux;
+  exports com.foo.bar.alpha;
+  exports com.foo.bar.beta;
+}
+					</code></pre>
+				</section>
+				<section>
+					<h3>module-info.java</h3>
+					<p>Liegt per Konvention im Root von src</p>
+					<pre><code data-trim>
+module-info.java
+com/foo/bar/alpha/AlphaFactory.java
+com/foo/bar/beta/Beta.java
+					</code></pre>
+					<aside class="notes">
+						<ul>
+							<li>anders als MANIFEST eine richtige Java Klasse, die zum class File kompiliert wird</li>
+						  <li>Artefakt ist das modulare JAR</li>
+						</ul>
+					</aside>
+				</section>
+				<section>
+					<h3>Module sind 1st class components!</h3>
+					<ul style="list-style-type: none;">
+						<li class="fragment" data-fragment-index="3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Module</li>
+						<li class="fragment" data-fragment-index="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Packages</li>
+						<li class="fragment" data-fragment-index="1">Klassen / Interfaces</li>
+					</ul>
+				</section>
+			</section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
+			<section>
+				<h2>Exkurs: Java SE Module</h3>
+				<img src="img/java9.png">
+			</section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
+			<section data-background-image="img/blueprint.jpg">
+				<section>
+					<h2>Module verwenden</h2>
+				</section>
+				<section>
+					<h3>Auflösung der Abhängigkeiten</h3>
+					<pre><code data-trim>
+module com.foo.app {
+  requires com.foo.bar;
+  requires java.sql;
+}
+</code></pre>
+				<pre class="fragment"><code data-trim>
+module java.sql {
+  requires java.logging;
+  requires java.xml;
+  exports java.sql;
+  exports javax.sql;
+  exports javax.transaction.xa;
+}
+</code></pre>
+				</section>
+				<section>
+					<h3>Auflösung der Abhängigkeiten</h3>
+					<img src="img/deps.png">
+				</section>
+				<section>
+					<h3>Zugriff auf Abhängigkeiten</h3>
+					<img src="img/access.png">
+				</section>
+				<section>
+					<h3>Transitive Abhängigkeiten</h3>
+					<ul>
+						<li>java.sql.Driver</li>
+					</ul>
+					<pre><code data-trim>
+	public Logger getParentLogger();
+	</code></pre>
+	<pre class="fragment"><code data-trim data-noescape>
+String url = ...;
+Properties props = ...;
+Driver d = DriverManager.getDriver(url);
+Connection c = d.connect(url, props);
+d.getParentLogger()<b>.info("Connection acquired");</b>
+</code></pre>
+				</section>
+				<section>
+					<h3>Transitive Abhängigkeiten</h3>
+	<pre><code data-trim data-noescape>
+module java.sql {
+requires <b>transitive</b> java.logging;
+requires <b>transitive</b> java.xml;
+exports java.sql;
+exports javax.sql;
+exports javax.transaction.xa;
+}
+</code></pre>
+				</section>
+				<section>
+					<h3>Transitive Abhängigkeiten</h3>
+					<img src="img/transdeps.png">
+				</section>
+				<section>
+					<h3>classpath vs. module path</h3>
+					<ul>
+						<li class="fragment" data-fragment-index="1">classpath:</li>
+						<ol class="fragment" data-fragment-index="1">
+							<li>Flach, d.h. nicht hierarchisch organisiert</li>
+							<li>Unterscheidung per JAR nicht mehr möglich</li>
+						</ol>
+						<li class="fragment" data-fragment-index="2">module path:</li>
+						<ol class="fragment" data-fragment-index="2">
+							<li>Hierarchisch organisiert</li>
+							<li>Zuordnung zu modularen JARs bleibt erhalten</li>
+						</ol>
+					</ul>
+				</section>
+			</section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
+			<section data-background-image="img/waiter.jpg">
+				<section>
+					<h2>Jigsaw und Services</h2>
+				</section>
+				<section>
+					<h3>Bis Java 8</h3>
+					<ul>
+						<li>ServiceLoader</li>
+						<li>META-INF/services</li>
+						<li>Dynamic binding</li>
+					</ul>
+				</section>
+				<section>
+					<h3>Bis Java 8</h3>
+					<p>Beispiel <code>java.sql.Driver</code></p>
+					<ul>
+						<li>Implementierung z.B. <code>com.mysql.jdbc</code></li>
+						<li>META-INF/services/com.mysql.jdbc:</li>
+					</ul>
+<pre><code data-trim data-noescape>
+com.mysql.jdbc.Driver
+</code></pre>
+				</section>
+				<section>
+					<h3>Ab Java 9</h3>
+<pre><code data-trim data-noescape>
+module java.sql {
+  requires public java.logging;
+  requires public java.xml;
+  exports java.sql;
+  exports javax.sql;
+  exports javax.transaction.xa;
+  <b>uses java.sql.Driver;</b>
+}
+</code></pre>
+				</section>
+				<section>
+					<h3>Ab Java 9</h3>
+<pre><code data-trim data-noescape>
+module com.mysql.jdbc {
+  requires java.sql;
+  requires org.slf4j;
+  exports com.mysql.jdbc;
+  <b>provides java.sql.Driver with com.mysql.jdbc.Driver;</b>
+}
+</code></pre>
+				<aside class="notes">
+					<ul>
+						<li>bei auto Modulen wird META-INF/services Einträge automatisch in provides umgewandelt</li>
+					</ul>
+				</aside>
+				</section>
+			</section>
+
+
+			<section data-background-image="img/migration.jpg">
+				<section>
+					<h2>Der Migrationspfad</h2>
+				</section>
+				<section>
+					<h3>Migration wird ermöglicht durch</h3>
+					<ul>
+						<li>Unnamed Modules</li>
+						<li>Automatic Modules</li>
+					</ul>
+				</section>
+				<section>
+					<h3>Unnamed Module</h3>
+					<ul>
+						<li>beinhaltet <b>alle</b> JARs im Klassenpfad</li>
+						<li>hat keinen Namen (d'oh)</li>
+						<li>hat Lesezugriff auf <b>alle</b> Module</li>
+						<li>Exportiert <b>alle</b> Packages</li>
+					</ul>
+					<aside class="notes">
+						<ul>
+							<li>Bei Konflikten gewinnt das named module</li>
+						</ul>
+					</aside>
+				</section>
+				<section>
+					<h3>Unnamed Module</h3>
+					<img src="img/unnamed1.png">
+				</section>
+				<section>
+					<h3>Unnamed Module</h3>
+<pre>
+module com.foo.app {
+	<span id="unnamed">requires unnamed;</span><span id="unnamed-frag" class="fragment">&nbsp;</span>
+}
+
+</pre>
+					<img src="img/unnamed2.png" class="fragment">
+				</section>
+				<section>
+					<h3>Bottom-Up Migration</h3>
+					<img src="img/bottomup1.png">
+				</section>
+				<section>
+					<h3>Bottom-Up Migration</h3>
+					<img src="img/bottomup2.png">
+				</section>
+				<section>
+					<h3>Bottom-Up Migration</h3>
+					<img src="img/bottomup3.png">
+				</section>
+				<section>
+					<h3>Automatic Module</h3>
+					<p>Der Bottom-up Ansatz ist nicht immer möglich!</p>
+					<img src="img/automatic.png" class="fragment">
+				</section>
+				<section>
+					<h3>Automatic Module</h3>
+					<img src="img/automatic2.png">
+				</section>
+				<section>
+					<h3>Automatic Modules</h3>
+					<p class="fragment">sind nicht unproblematisch!!</p>
+					<img src="img/automatic3.png">
+				</section>
+				<section>
+					<h3>Automatic Module...</h3>
+					<img src="img/automatic4.png">
+				</section>
+				<section>
+					<h3>Automatic Module......</h3>
+					<img src="img/automatic5.png">
+					<aside class="notes">
+						<ul>
+							<li>Konflikte zwischen automatic modules darf es nicht geben!</li>
+						</ul>
+					</aside>
+				</section>
+			</section>
+			<section data-background-image="img/handson.jpg">
+				<h2>Hands on!</h2>
+			</section>
+		</div>
+	</div>
+
+	<script src="lib/js/head.min.js"></script>
+	<script src="js/reveal.js"></script>
+
+	<script>
+		// More info https://github.com/hakimel/reveal.js#configuration
+		Reveal.initialize({
+			history: true,
+
+			// More info https://github.com/hakimel/reveal.js#dependencies
+			dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+			]
+		});
+
+		Reveal.addEventListener( 'fragmentshown', function( event ) {
+			if(event.fragment.id == 'unnamed-frag') {
+				document.getElementById('unnamed').innerHTML = '<strike>requires unnamed;</strike>';
+			}
+		} );
+	</script>
+	</body>
+</html>
