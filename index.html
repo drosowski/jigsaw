@@ -34,7 +34,7 @@
 				<section>
 					<h2>Wozu brauchen wir Java Jigsaw?</h2>
 				</section>
-				<section data-background-image="img/hell.jpg">
+				<section data-background-image="img/hell.png">
 					<h2>JAR Hell!</h2>
 					<aside class="notes">
 						<ul>
@@ -54,15 +54,44 @@
 					</aside>
 				</section>
 				<section data-background-image="img/babel.jpg">
-					<h2>Java Anwendungen sind monolithisch!</h2>
-					<p class="fragment">High cohesion, low coupling</p>
-					<img src="img/coupling.jpg" class="fragment">
+					<h2>Java Anwendungen sind <small>(oftmals)</small> monolithisch!</h2>
 					<aside class="notes">
 						<ul>
 							<li>auch hier hat Maven Linderung verschafft</li>
 							</li>OSGi zwar geeignet, aber fristet Nischendasein</li>
 						</ul>
 					</aside>
+				</section>
+			</section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
+			<section data-background-image="img/teamam.jpg">
+				<section>
+					<h2>Java Modules to the Rescue</h2>
+				</section>
+				<section>
+					<h3>Reliable Configuration</h3>
+					<p>Compile und Runtimeprüfung dass</p>
+					<ul>
+						<li>Jede Abhängigkeit erfüllt ist</li>
+						<li>Keine Zyklen auftreten (Ausnahme Automatic Modules)</li>
+						<li>Keine Mehrdeutigkeit zwischen Modulen vorhanden ist</li>
+					</ul>
+				</section>
+				<section>
+					<h3>Strong Encapsulation</h3>
+					<ul>
+						<li>public greift nur innerhalb des Moduls</li>
+						<li>Das Package muss explizit exportiert werden</li>
+						<li>Sogar Reflection funktioniert nicht!</li>
+					</ul>
+				</section>
+				<section>
+					<h3>High cohesion, low coupling</h3>
+					<img src="img/coupling.jpg">
 				</section>
 			</section>
 
@@ -133,8 +162,18 @@ com/foo/bar/beta/Beta.java
 			<!-- ############# -->
 
 			<section>
-				<h2>Exkurs: Java SE Module</h3>
-				<img src="img/java9.png">
+				<section>
+					<h2>Exkurs: Java SE Module</h2>
+					<img src="img/java9.png">
+				</section>
+				<section>
+					<h3>Wo ist denn <code>sun.*</code> geblieben?</h3>
+					<ul>
+						<li>Zugriff auf interne API ist möglich, aber von abgeraten</li>
+						<li>Modul <code>jdk.unsupported</code> dient derweil als Workaround</li>
+						<li>JDK Team ist um eine supportete Variante bemüht</li>
+					</ul>
+				</section>
 			</section>
 
 			<!-- ############# -->
@@ -204,6 +243,16 @@ exports javax.transaction.xa;
 					<img src="img/transdeps.png">
 				</section>
 				<section>
+					<h3>Optionale Abhängigkeiten</h3>
+					<p>Optional zur Laufzeit, Obligatorisch zum Kompilieren</p>
+					<pre><code data-trim data-noescape>
+module com.foo.app {
+  requires com.foo.bar;
+  requires <b>static</b> java.sql;
+}
+</code></pre>
+				</section>
+				<section>
 					<h3>classpath vs. module path</h3>
 					<ul>
 						<li class="fragment" data-fragment-index="1">classpath:</li>
@@ -270,14 +319,26 @@ module com.mysql.jdbc {
   <b>provides java.sql.Driver with com.mysql.jdbc.Driver;</b>
 }
 </code></pre>
-				<aside class="notes">
-					<ul>
-						<li>bei auto Modulen wird META-INF/services Einträge automatisch in provides umgewandelt</li>
-					</ul>
-				</aside>
+					<aside class="notes">
+						<ul>
+							<li>bei auto Modulen wird META-INF/services Einträge automatisch in provides umgewandelt</li>
+						</ul>
+					</aside>
+				</section>
+				<section>
+					<h3>Ab Java 9</h3>
+					<img src="img/service.png">
+					<aside class="notes">
+						<ul>
+							<li>mysql Treiber muss per Reflection geladen werden können, also muss dieser zum Modulepath hinzugefügt werden</li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 
+						<!-- ############# -->
+						<!-- top level section -->
+						<!-- ############# -->
 
 			<section data-background-image="img/migration.jpg">
 				<section>
@@ -319,37 +380,70 @@ module com.foo.app {
 					<img src="img/unnamed2.png" class="fragment">
 				</section>
 				<section>
+					<h3>Automatic Module</h3>
+					<p>Jedes JAR wird automagisch zu einem Modul</p>
+					<ul>
+						<li>Modulname ergibt sich aus Präfix des Dateinamens ohne Version</li>
+						<li>Bindestriche werden durch einen Punkt ersetzt</li>
+						<li class="fragment" data-fragment-index="1">z.B. ergibt <code class="fragment highlight-blue" data-fragment-index="1">guava-21.jar</code> == <code class="fragment highlight-green" data-fragment-index="1">guava</code></li>
+						<li class="fragment" data-fragment-index="2">oder <code class="fragment highlight-blue" data-fragment-index="2">commons-io-1.3.2.jar</code> == <code class="fragment highlight-green" data-fragment-index="2">commons.io</code></li>
+					</ul>
+				</section>
+				<section>
+					<h3>Class Path oder Module Path?</h3>
+					<table class="tableblock frame-all grid-all" style="width:100%">
+						<colgroup><col style="width:33%"><col style="width:33%"><col style="width:33%"></colgroup>
+						<thead>
+							<tr><th class="tableblock halign-left valign-top"></th><th class="tableblock halign-left valign-top">Class Path</th><th class="tableblock halign-left valign-top">Module Path</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Regular JAR</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Unnamed Module</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Automatic Module</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Modular JAR</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Unnamed Module</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">Named Module</p></td></tr></tbody></table>
+							&copy; codeFX.org
+				</section>
+				<section data-transition-speed="fast" data-transition="none">
 					<h3>Bottom-Up Migration</h3>
 					<img src="img/bottomup1.png">
+					<aside class="notes">
+						<ul>
+							<li>as-is befindet sich unser Modul im unnamed und hat damit Lesezugriff auf alles</li>
+						</ul>
+					</aside>
 				</section>
-				<section>
+				<section data-transition-speed="fast" data-transition="none">
 					<h3>Bottom-Up Migration</h3>
 					<img src="img/bottomup2.png">
+					<aside class="notes">
+						<ul>
+							<li>einfaches Herausbilden des ersten Moduls org.baz.qux</li>
+						</ul>
+					</aside>
 				</section>
-				<section>
+				<section data-transition-speed="fast" data-transition="none">
 					<h3>Bottom-Up Migration</h3>
 					<img src="img/bottomup3.png">
 				</section>
-				<section>
-					<h3>Automatic Module</h3>
+				<section data-transition-speed="fast" data-transition="none">
+					<h3>Top-Down Migration</h3>
 					<p>Der Bottom-up Ansatz ist nicht immer möglich!</p>
 					<img src="img/automatic.png" class="fragment">
+					<aside class="notes">
+						<ul>
+							<li>Was wäre bspw. wenn org.baz.qux eine externe Bibliothek ist?</li>
+						</ul>
+					</aside>
 				</section>
-				<section>
-					<h3>Automatic Module</h3>
+				<section data-transition-speed="fast" data-transition="none">
+					<h3>Top-Down Migration</h3>
 					<img src="img/automatic2.png">
+					<aside class="notes">
+						<ul>
+							<li>auto mods haben Lesezugriff auf alle anderen Module (Zyklische Abhängigkeiten!)</li>
+						</ul>
+					</aside>
 				</section>
-				<section>
-					<h3>Automatic Modules</h3>
-					<p class="fragment">sind nicht unproblematisch!!</p>
-					<img src="img/automatic3.png">
-				</section>
-				<section>
-					<h3>Automatic Module...</h3>
+				<section data-transition-speed="fast" data-transition="none">
+					<h3>Top-Down Migration</h3>
 					<img src="img/automatic4.png">
 				</section>
-				<section>
-					<h3>Automatic Module......</h3>
+				<section data-transition-speed="fast" data-transition="none">
+					<h3>Top-Down Migration</h3>
 					<img src="img/automatic5.png">
 					<aside class="notes">
 						<ul>
@@ -358,8 +452,39 @@ module com.foo.app {
 					</aside>
 				</section>
 			</section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
 			<section data-background-image="img/handson.jpg">
 				<h2>Hands on!</h2>
+			</section>
+
+			<!-- ############# -->
+			<!-- top level section -->
+			<!-- ############# -->
+
+			<section data-background-image="img/boxing.jpg">
+				<section>
+					<h2>Jigsaw vs. OSGi</h2>
+				</section>
+				<section>
+					<table class="tableblock frame-all grid-all" style="width:100%"><colgroup><col style="width:33.3333%"><col style="width:33.3333%"><col style="width:33.3334%"></colgroup><thead><tr><th class="tableblock halign-left valign-top"></th><th class="tableblock halign-left valign-top">Jigsaw</th><th class="tableblock halign-left valign-top">OSGi</th></tr></thead><tbody><tr><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Versioning</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">not at all</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">packages and modules</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Runtime Behavior</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">mostly static</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">dynamic</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Services</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">declarative via <code>ServiceLoader</code></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">declarative or programmatically;<br>
+					more flexible</p></td></tr><tr><td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Class Loaders</strong></p></td><td class="tableblock halign-left valign-top"><p class="tableblock">operates below</p></td><td class="tableblock halign-left valign-top"><p class="tableblock">one per bundle</p></td></tr></tbody></table>
+					&copy; codeFX.org
+				</section>
+			</section>
+
+			<section data-background-image="img/puzzle.jpg">
+				<h2>&#9836; Closing Time &#9836;</h2>
+				<ul>
+					<li><a href="http://openjdk.java.net/projects/jigsaw/">http://openjdk.java.net/projects/jigsaw/</a></li>
+					<li><a href="https://blog.codefx.org/java/java-9-migration-guide/">https://blog.codefx.org/java/java-9-migration-guide/</a></li>
+					<li><a href="https://www.youtube.com/watch?v=l1s7R85GF1A">https://www.youtube.com/watch?v=l1s7R85GF1A</a></li>
+				</ul>
+				<img src="img/book.png" style="height: 25%; width: 25%; float: left; margin-left: 200px;">
+				<img src="img/book2.jpg" style="height: 25%; width: 25%; float: right; margin-right: 200px;">
 			</section>
 		</div>
 	</div>
